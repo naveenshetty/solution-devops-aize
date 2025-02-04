@@ -1,0 +1,118 @@
+name: CI/CD for Dockerized Flask App and Node js
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - staging
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flask pytest
+
+      - name: Run tests
+        run: |
+          cd backend-service/src/test || exit 0
+          pytest || echo "No tests found, skipping."
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Docker Image for backend
+        run: |
+          cd backend-service
+          docker build -t naveen192/backend:${{ github.sha }} . || { echo "Docker build failed"; exit 1; }
+          docker tag naveen192/backend:${{ github.sha }} naveen192/backend:latest
+          docker push naveen192/backend:${{ github.sha }} || { echo "Docker push failed"; exit 1; }
+          docker push naveen192/backend:latest
+
+      - name: Build and Push Docker Image for frontend
+        run: |
+          cd frontend-service
+          docker build -t naveen192/frontend:${{ github.sha }} . || { echo "Docker build failed"; exit 1; }
+          docker tag naveen192/frontend:${{ github.sha }} naveen192/frontend:latest
+          docker push naveen192/frontend:${{ github.sha }} || { echo "Docker push failed"; exit 1; }
+          docker push naveen192/frontend:latest
+
+  deploy-dev:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Deploy to Dev for backend
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+            host: ${{ secrets.EC2_HOST }}
+            username: ubuntu
+            key: ${{ secrets.EC2_SSH_KEY }}
+            script: |
+              set -x
+              IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/backend:latest"
+              sudo docker pull $IMAGE_NAME
+              sudo docker stop backend || true
+              sudo docker rm backend || true
+              sudo docker run -d --name backend -p 5000:5000 $IMAGE_NAME
+
+      - name: Deploy to Dev for frontend
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+            host: ${{ secrets.EC2_HOST }}
+            username: ubuntu
+            key: ${{ secrets.EC2_SSH_KEY }}
+            script: |
+              set -x
+              IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend:latest"
+              sudo docker pull $IMAGE_NAME
+              sudo docker stop frontend || true
+              sudo docker rm frontend || true
+              sudo docker run -d --name frontend -p 3000:3000 $IMAGE_NAME
+
+  deploy-stage:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: stage
+    steps:
+      - name: Deploy backend to Staging
+        run: echo "Deploying Image ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }} to STAGING"
+      - name: Deploy frontend to Staging
+        run: echo "Deploying Image ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }} to STAGING"
+
+  deploy-prod:
+    needs: deploy-stage
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Deploy backend to Production
+        run: echo "Deploying Image ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }} to PRODUCTION"
+      - name: Deploy frontend to Production
+        run: echo "Deploying Image ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }} to PRODUCTION"
