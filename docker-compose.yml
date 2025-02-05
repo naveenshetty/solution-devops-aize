@@ -12,7 +12,7 @@ services:
     networks:
       - app-network
     environment:
-      - APP_API_URL=http://backend:5000 #This allows the frontend to make API requests to the backend via Docker's internal DNS system, using the service name backend.
+      - APP_API_URL=http://54.161.120.34:5000 #This allows the frontend to make API requests to the backend via Docker's internal DNS system, using the service name backend.
 
   backend:
     build:
