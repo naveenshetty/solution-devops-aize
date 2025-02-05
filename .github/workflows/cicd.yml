@@ -59,16 +59,14 @@ jobs:
           docker-compose -f docker-compose.yml build || { echo "Docker Compose build failed"; exit 1; }
 
           # Tag and push backend image
-          docker tag backend-service:latest naveen192/backend:${{ github.sha }}
-          docker tag backend-service:latest naveen192/backend:latest
+          docker tag naveen192/backend:latest naveen192/backend:${{ github.sha }}
+          docker push naveen192/backend:latest || { echo "Docker push failed"; exit 1; }
           docker push naveen192/backend:${{ github.sha }} || { echo "Docker push failed"; exit 1; }
-          docker push naveen192/backend:latest
 
           # Tag and push frontend image
-          docker tag frontend-service:latest naveen192/frontend:${{ github.sha }}
-          docker tag frontend-service:latest naveen192/frontend:latest
+          docker tag naveen192/frontend:latest naveen192/frontend:${{ github.sha }}
+          docker push naveen192/frontend:latest || { echo "Docker push failed"; exit 1; }
           docker push naveen192/frontend:${{ github.sha }} || { echo "Docker push failed"; exit 1; }
-          docker push naveen192/frontend:latest
 
   deploy-dev:
     needs: build-and-push
