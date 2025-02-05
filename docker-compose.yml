@@ -4,6 +4,7 @@ services:
   frontend:
     build:
       context: ./frontend-service
+    image: naveen192/frontend:latest
     ports:
       - "8080:8080"  # Expose frontend on port 8080
     depends_on:
@@ -16,6 +17,7 @@ services:
   backend:
     build:
       context: ./backend-service
+    image: naveen192/backend:latest
     ports:
       - "5000:5000"  # Expose backend on port 5000
     networks:
