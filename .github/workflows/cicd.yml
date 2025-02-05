@@ -42,25 +42,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Docker Compose
+        uses: docker/compose-action@v2
 
-      - name: Build and Push Docker Image for backend
+      - name: Build and Push Docker Images using Docker Compose
         run: |
-          cd backend-service
-          docker build -t naveen192/backend:${{ github.sha }} . || { echo "Docker build failed"; exit 1; }
-          docker tag naveen192/backend:${{ github.sha }} naveen192/backend:latest
+          # Build the images using docker-compose
+          docker-compose -f docker-compose.yml build || { echo "Docker Compose build failed"; exit 1; }
+
+          # Tag and push backend image
+          docker tag backend-service:latest naveen192/backend:${{ github.sha }}
+          docker tag backend-service:latest naveen192/backend:latest
           docker push naveen192/backend:${{ github.sha }} || { echo "Docker push failed"; exit 1; }
           docker push naveen192/backend:latest
 
-      - name: Build and Push Docker Image for frontend
-        run: |
-          cd frontend-service
-          docker build -t naveen192/frontend:${{ github.sha }} . || { echo "Docker build failed"; exit 1; }
-          docker tag naveen192/frontend:${{ github.sha }} naveen192/frontend:latest
+          # Tag and push frontend image
+          docker tag frontend-service:latest naveen192/frontend:${{ github.sha }}
+          docker tag frontend-service:latest naveen192/frontend:latest
           docker push naveen192/frontend:${{ github.sha }} || { echo "Docker push failed"; exit 1; }
           docker push naveen192/frontend:latest
 
