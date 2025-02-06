@@ -11,4 +11,3 @@ EXPOSE 5000
 
 # Start the application
 CMD ["python", "src/start_api.py"]
-#CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "src.start_api:app"]

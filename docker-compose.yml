@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend-service
+    image: naveen192/frontend:latest
+    ports:
+      - "8080:8080"  # Expose frontend on port 8080
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    environment:
+      - APP_API_URL=http://54.161.120.34:5000 #This allows the frontend to make API requests to the backend via Docker's internal DNS system, using the service name backend.
+
+  backend:
+    build:
+      context: ./backend-service
+    image: naveen192/backend:latest
+    ports:
+      - "5000:5000"  # Expose backend on port 5000
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
