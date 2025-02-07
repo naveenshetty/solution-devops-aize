@@ -71,3 +71,4 @@ The solution follows a “build once, deploy anywhere” approach and includes e
 ---
 
 
+- <img src="sketch.png" alt="sketch" width="500">

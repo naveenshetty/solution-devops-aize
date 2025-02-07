@@ -11,9 +11,9 @@ services:
       - backend
     networks:
       - app-network
-    environment:
+    #environment:
       #- APP_API_URL=http://<ALB_DNS>/api
-      - APP_API_URL=http://54.161.120.34:5000
+     # - APP_API_URL=http://54.161.120.34:5000
 
   backend:
     build:
